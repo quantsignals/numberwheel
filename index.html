@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gear Remainder Visualization</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        canvas {
+            border: 1px solid black;
+            background-color: #007bff; 
+        }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        .controls label {
+            margin-right: 10px; 
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gearCanvas" width="800" height="500"></canvas>
+
+    <script>
+        // Get elements from the DOM
+        const canvas = document.getElementById("gearCanvas");
+        const ctx = canvas.getContext("2d");
+        
+
+        // Canvas and gear properties
+        let gearTeeth = 2; // Start with 2 teeth
+        let gearPosition = 0; // Start at position 0 on the number line
+        const numberLinePositions = 20; // Number of positions on the number line
+
+        const numberLineStartX = 200; // Start of number line
+        const numberLineLength = 500; // Length of the number line
+        const positionGap = numberLineLength / numberLinePositions; // Gap between each number
+        const centerY = canvas.height / 2 + 100; // Position just above the number line
+
+        let gearX = numberLineStartX + gearPosition * positionGap; // Initial X position of the gear
+        let gearRadius = calculateGearRadius(gearTeeth); // Calculate the initial radius based on teeth
+
+        let angle = Math.PI / 2; // Initial angle for the gear (starts with one tooth pointing downwards)
+
+        // Function to calculate gear radius based on the number of teeth
+        function calculateGearRadius(teeth) {
+            return (positionGap * teeth) / (2 * Math.PI);
+        }
+
+        // Event listener for arrow keys to control the gear
+        document.addEventListener('keydown', (event) => {
+            if (event.key === "ArrowRight") {
+                // Move gear to the right by one position and rotate to align teeth
+                if (gearPosition < numberLinePositions && gearPosition === Math.floor(gearPosition)) {
+                    for(let i=1;i<=10;i++){
+                        setTimeout(() => { 
+
+                        gearPosition += 0.1*1;
+                        gearPosition = 0.1*Math.round(gearPosition*10);
+                        gearX = numberLineStartX + gearPosition * positionGap;
+                        angle += 0.1*2 * Math.PI / gearTeeth; // Rotate the gear counterclockwise by one tooth
+                        draw();
+                        }, 
+                     i * 10);
+                    }
+                }
+            } else if (event.key === "ArrowLeft") {
+                // Move gear to the left by one position and rotate to align teeth
+                if (gearPosition > 0 && gearPosition === Math.floor(gearPosition) ) {
+                    for(let i=1;i<=10;i++){
+                        setTimeout(() => { 
+                            gearPosition -= 0.1*1;
+                            gearPosition = 0.1*Math.round(gearPosition*10);
+                            gearX = numberLineStartX + gearPosition * positionGap;
+                            angle -= 0.1*2 * Math.PI / gearTeeth; // Rotate the gear clockwise by one tooth
+                            draw();
+                        }, 
+                     i * 10);
+                    }                            
+                }
+            } else if (event.key === "ArrowUp") {
+                // Increase the number of teeth and adjust gear size
+                if (gearTeeth < 20) {
+                    gearTeeth += 1;
+                    gearRadius = calculateGearRadius(gearTeeth); // Adjust gear size based on teeth
+                    
+                    gearX = numberLineStartX;
+                    gearPosition=0;
+                    angle = Math.PI / 2; // Reset angle so a tooth points downwards
+                }
+            } else if (event.key === "ArrowDown") {
+                // Decrease the number of teeth and adjust gear size
+                if (gearTeeth > 2) {
+                    gearTeeth -= 1;
+                    gearRadius = calculateGearRadius(gearTeeth); // Adjust gear size based on teeth
+                    
+                    gearX = numberLineStartX;
+                    gearPosition=0;
+                    angle = Math.PI / 2; // Reset angle so a tooth points downwards
+                }
+            }
+            // Re-draw the canvas when a key is pressed
+            draw();
+        });
+
+        // Draw the gear
+        function drawGear(gearX, angle) {
+            const centerX = gearX;
+
+            // Draw the gear body
+            ctx.beginPath();
+            ctx.arc(centerX, centerY - gearRadius, gearRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 5;
+            ctx.stroke();
+
+            // Draw gear teeth with alternating red and blue colors
+            for (let i = 0; i < gearTeeth; i++) {
+                let theta = angle + (i * (2 * Math.PI / gearTeeth));
+                let x = centerX + (gearRadius + 10) * Math.cos(theta);
+                let y = (centerY - gearRadius) + (gearRadius + 10) * Math.sin(theta);
+
+                // Alternate colors between red and blue
+                if (i % 2 === 0) {
+                    ctx.strokeStyle = "red";
+                } else {
+                    ctx.strokeStyle = "blue";
+                }
+
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY - gearRadius);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+
+                // Draw the tooth number at the end of each tooth in counterclockwise direction
+                ctx.font = "16px Arial";
+                ctx.fillStyle = "black";
+                let numberX = centerX + (gearRadius + 20) * Math.cos(theta); // Position the number just beyond the end of the tooth
+                let numberY = (centerY - gearRadius) + (gearRadius + 20) * Math.sin(theta);
+                ctx.fillText((gearTeeth - i) % gearTeeth, numberX - 5, numberY + 5); // Counterclockwise numbering
+            }
+        }
+
+        // Draw the number line
+        function drawNumberLine() {
+            ctx.beginPath();
+            ctx.moveTo(numberLineStartX, canvas.height / 2 + 130);
+            ctx.lineTo(numberLineStartX + numberLineLength, canvas.height / 2 + 130);
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Draw ticks and numbers
+            for (let i = 0; i <= numberLinePositions; i++) {
+                let tickX = numberLineStartX + (i * positionGap);
+                ctx.beginPath();
+                ctx.moveTo(tickX, canvas.height / 2 + 130);
+                ctx.lineTo(tickX, canvas.height / 2 + 150);
+                ctx.strokeStyle = "black";
+                ctx.stroke();
+
+                // Draw the number below the tick
+                ctx.font = "16px Arial";
+                ctx.fillStyle = "black";
+                ctx.fillText(i, tickX - 5, canvas.height / 2 + 170);
+            }
+        }
+
+        // Clear the canvas
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Main draw function
+        function draw() {
+            clearCanvas();
+            drawGear(gearX, angle);
+            drawNumberLine();
+
+            // Compute Active Tooth (the one aligned with the number line)
+            const activeTooth = (gearTeeth*(angle+1.5*Math.PI)/(2*Math.PI)).toFixed(0) % gearTeeth;
+
+            // Display the current position, number of teeth, and Active Tooth
+            ctx.font = "24px Arial";
+            ctx.fillStyle = "white";
+            ctx.fillText(`Number of Teeth: ${gearTeeth}`, 50, 50);
+            ctx.fillText(`Number Line Position: ${gearPosition.toFixed(0)}`, 50, 80);
+            ctx.fillText(`Active Tooth (Modulus): ${activeTooth} = ${gearPosition.toFixed(0)} % ${gearTeeth}`, 50, 110); // Display Active Tooth
+
+            ctx.font = "16px Arial";
+            ctx.fillStyle = "#91cee6";
+            ctx.fillText(`Control with Cursor Keys: Move Wheel = Left/Right | Size Wheel: Up/Down`, 50, 470);
+            ctx.fillText(`M.A. Rhode, Fall 2024`, 600, 470);
+        }
+
+        // Initial draw
+        draw();
+    </script>
+</body>
+</html>
+
